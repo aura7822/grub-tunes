@@ -1,7 +1,7 @@
 <div align="center">
   
 ### BEEPER GRUB®
-   <img src="https://skillicons.dev/icons?i=linux,github,html" />
+   <img src="https://skillicons.dev/icons?i=linux,github,htmx,debian,redhat,arch" />
 
 <table><tr><td>Uncomplicated tool for tweaking grub menu init beeps on your machine for Linux Gurus<br>escalating your larp!</td></tr></table><p>
   <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge&logo=github&color=33ff00" />
@@ -17,6 +17,6 @@
   
   🎜 Ping </td><td>
   <p align="right">
-<img src="https://github.com/aura7822/grub-tunes/blob/main/beep.png" width="500" height="170"/></p>
+<img src="https://github.com/aura7822/grub-tunes/blob/main/beep.png" width="500" height="180"/></p>
   </p></td></tr></table></div>
 
