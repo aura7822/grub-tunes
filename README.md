@@ -1,11 +1,11 @@
 <div align="center">
   
 ### BEEPER GRUB®
-   <img src="https://skillicons.dev/icons?i=linux,github,htmx,debian,redhat,arch" />
+   <img src="https://skillicons.dev/icons?i=linux,github,htmx,debian,redhat,arch,nix" />
 
 <table><tr><td>Uncomplicated tool for tweaking grub menu init beeps on your machine for Linux Gurus<br>escalating your larp!</td></tr></table><p>
-  <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge&logo=github&color=33ff00" />
-  <a href="https://aura7822.github.io/grub-tunes/"> <img src="https://img.shields.io/badge/Launch-Me-blue?style=for-the-badge" alt="Launch me"/> </a></p> </div><div align="center">
+  <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge&logo=github&color=aa0000" />
+  <a href="https://aura7822.github.io/grub-tunes/"> <img src="https://img.shields.io/badge/Launch-Me-red?style=for-the-badge" alt="Launch me"/> </a></p> </div><div align="center">
  <p> <table><tr><td>
 <table><tr><td><strong>Instance Beeps</strong></td></tr></table>
   
