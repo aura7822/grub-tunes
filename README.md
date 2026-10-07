@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge&logo=github&color=33ff00" />
   <a href="https://aura7822.github.io/grub-tunes/"> <img src="https://img.shields.io/badge/Launch-Me-blue?style=for-the-badge" alt="Launch me"/> </a></p> </div><div align="center">
  <p> <table><tr><td>
-<table><tr><td>Instance Beeps</td></tr></table>
+<table><tr><td><strong>Instance Beeps</strong></td></tr></table>
   
   🎜 Super mario world
   
