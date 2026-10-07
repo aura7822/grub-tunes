@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRUB Tune Lab</title>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#172350;--mute:#5d6682;--line:#d5dae5;--roll:#24305b;--note:#ff6a2b;--grid:#2c3659;--bad:#c62828;--code:#e3e8f1}
+@media (prefers-color-scheme:dark){:root{--bg:#1d021b;--panel:#182044;--ink:#e8ebf6;--mute:#9aa3c2;--line:#2c3659;--roll:#0b0f22;--code:#0b0f22;--bad:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:28px 18px 60px}
+h1,h2,h3{font-family:Rockwell,"Roboto Slab","Rockwell Nova",Georgia,serif;line-height:1.2;margin:0}
+h1{font-size:2.3rem;margin-bottom:6px}
+h2{font-size:1.4rem;margin:40px 0 12px}
+h3{font-size:1.05rem;margin:18px 0 6px}
+p{margin:0 0 12px;max-width:72ch}.lead{color:var(--mute);font-size:1.05rem}
+code,pre,textarea,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{background:var(--code);padding:1px 6px;border-radius:4px;font-size:.9em}
+pre{background:var(--code);padding:12px 14px;border-radius:8px;overflow-x:auto;margin:6px 0 12px;font-size:.9rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+textarea{width:100%;font-size:1.2rem;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);resize:vertical}
+textarea:focus,button:focus-visible,input:focus-visible{outline:3px solid var(--note);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+button,input[type=text]{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+button{cursor:pointer;font-weight:600}button:hover{border-color:var(--note)}
+button.go{background:var(--note);border-color:var(--note);color:#1b1000}
+.err{color:var(--bad);min-height:1.5em;margin-top:8px}
+canvas{width:100%;height:190px;display:block;background:var(--roll);border-radius:10px;margin-bottom:12px}
+.vol{display:flex;gap:8px;align-items:center;color:var(--mute)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+tr.on td{background:rgba(255,106,43,.22)}
+.tw{overflow-x:auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.card .code{font-size:.82rem;word-break:break-all;color:var(--mute)}
+.card .row{margin-top:auto}
+.card button{padding:5px 10px;font-size:.88rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.two{grid-template-columns:1fr}h1{font-size:1.8rem}}
+.notes{columns:3 130px;font-size:.9rem}
+.notes div{break-inside:avoid}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>.............G</h1>
+<h1>BEEPER</h1>
+<h1>.............U</h1>
+<h1>.............B</h1>
+
+<p class="lead">Compose a GRUB boot tune, listen it in the browser, then paste it into your /etc/default/grub.conf. Runs entirely on this page; nothing is uploaded.</p>
+
+<h2>Test a tune</h2>
+<div class="panel">
+  <canvas id="roll" width="900" height="190" aria-label="Piano roll of the current tune"></canvas>
+  <label for="tune"><strong>Tune code</strong> <span style="color:var(--mute)">tempo, then pitch and duration pairs</span></label>
+  <textarea id="tune" rows="2" spellcheck="false">480 440 1</textarea>
+  <div class="err" id="err" role="alert"></div>
+  <div class="row">
+    <button class="go" id="play">Play</button>
+    <button id="stop">Stop</button>
+    <label class="vol">Vol <input type="range" id="vol" min="1" max="100" value="30"></label>
+  </div>
+  <div class="row">
+    <input type="text" id="name" placeholder="Name this tune" aria-label="Tune name">
+    <button id="save">Save to my tunes</button>
+  </div>
+  <h3>Use it in GRUB</h3>
+  <div class="two">
+    <div><small>/etc/default/grub</small><pre id="o1"></pre></div>
+    <div><small>GRUB shell or grub.cfg</small><pre id="o2"></pre></div>
+  </div>
+  <div class="row"><button id="c1">Copy GRUB_INIT_TUNE line</button><button id="c2">Copy play command</button></div>
+  <h3>Note decomposition</h3>
+  <p id="sum" style="color:var(--mute)"></p>
+  <div class="tw"><table id="tbl"><thead><tr><th>#</th><th>Pitch (Hz)</th><th>Note</th><th>Duration units</th><th>Seconds</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<h2>Tune library</h2>
+<div class="cards" id="lib"></div>
+<h2>My tunes</h2>
+<p id="mine-empty" style="color:var(--mute)">Nothing saved yet. Write a tune above, name it, and choose Save to my tunes. Saved tunes stay in this browser.</p>
+<div class="cards" id="mine"></div>
+
+<h2>What the numbers mean</h2>
+<p>A GRUB tune is a list of whole numbers. The first number is the tempo. Everything after it comes in pairs: a pitch in hertz, then a duration.</p>
+<pre>480  440 1  880 2
+│    │   │  │   └ duration: 2 units
+│    │   │  └ pitch: 880 Hz (A5)
+│    │   └ duration: 1 unit
+│    └ pitch: 440 Hz (A4)
+└ tempo</pre>
+<h3>Tempo</h3>
+<p>Tempo sets the length of one duration unit: <code>unit = 60 ÷ tempo</code> seconds. Tempo 60 gives one second per unit, 120 gives half a second, 480 gives 0.125 seconds.</p>
+<h3>Pitch</h3>
+<p>Frequency in Hz. Use <code>0</code> for a rest. Values outside roughly 20 to 20000 Hz are silent, and a typical PC speaker sounds best between about 100 and 4000 Hz.</p>
+<h3>Duration</h3>
+<p>How many units the pitch lasts. Seconds = <code>duration × 60 ÷ tempo</code>. So <code>480 440 1</code> is one 440 Hz beep lasting 0.125 seconds.</p>
+<h3>Pitch reference</h3>
+<div class="panel notes" id="ref"></div>
+
+<h2>Add a tune to GRUB</h2>
+<h3>1. Set the tune</h3>
+<p>Edit <code>/etc/default/grub</code> as root and add or change this line. Keep the quotes.</p>
+<pre>GRUB_INIT_TUNE="480 440 1"</pre>
+<h3>2. Regenerate the config</h3>
+<pre># Debian, Ubuntu, Mint
+sudo update-grub
+
+# Fedora, RHEL, openSUSE (BIOS or UEFI)
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+
+# Arch, Gentoo, most others
+sudo grub-mkconfig -o /boot/grub/grub.cfg</pre>
+<p>The generated <code>grub.cfg</code> now contains a <code>play</code> line that runs each time GRUB starts, before the menu appears.</p>
+<h3>3. Try it without rebooting into a full test</h3>
+<p>At the GRUB menu press <kbd>c</kbd> for the command line and type <code>play 480 440 1</code>. Press <kbd>Esc</kbd> to go back. This is the quickest way to check what your hardware does.</p>
+<h3>Tune on one menu entry only</h3>
+<p>Put <code>play</code> inside a custom entry in <code>/etc/grub.d/40_custom</code>, then regenerate the config:</p>
+<pre>menuentry "Windows" {
+    play 480 880 1 440 1
+    chainloader +1
+}</pre>
+<h3>Troubleshooting</h3>
+<p>GRUB uses the PC speaker, not your sound card. Many laptops, newer desktops and virtual machines have none or leave it muted. Check that the speaker or buzzer is connected, the volume in firmware setup allows it, and in QEMU that a PC speaker device is enabled. The browser preview here is a square wave to imitate that sound, so real hardware will differ.</p>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const LIB=[
+["Classic beep","480 440 1","The stock example from the GRUB manual."],
+["Rising pair","480 440 1 880 1","Low tone, then an octave up."],
+["Falling pair","480 880 1 440 1","High tone, then an octave down."],
+["Double chirp","600 1000 1 0 1 1000 1","Two short high beeps with a rest."],
+["Ping","1000 2000 1","A very short, very high tick."],
+["Major arpeggio","480 523 1 659 1 784 1 1047 2","C major, climbing to the top."],
+["Minor arpeggio","480 440 1 523 1 659 2","A minor, a little moodier."],
+["Power up","960 262 1 330 1 392 1 523 1 659 1 784 2","Fast climb through C major."],
+["Power down","480 784 1 659 1 523 1 392 2","Slow descent."],
+["Alarm","480 880 1 659 1 880 1 659 1 880 1 659 1","Alternating two-tone siren."],
+["Low growl","240 110 1 82 2","Deep, short, and ominous."],
+["Morse SOS","600 1000 1 0 1 1000 1 0 1 1000 1 0 3 1000 3 0 1 1000 3 0 1 1000 3 0 3 1000 1 0 1 1000 1 0 1 1000 1","Three short, three long, three short."],
+["Ode to Joy","240 330 1 330 1 349 1 392 1 392 1 349 1 330 1 294 1 262 1 262 1 294 1 330 1 330 2 294 1 294 2","Opening phrase of Beethoven's theme."]];
+function noteName(f){if(f<20)return'rest';const m=Math.round(69+12*Math.log2(f/440));return NAMES[(m%12+12)%12]+(Math.floor(m/12)-1)}
+const audible=h=>h>20&&h<20000;
+function parse(s){
+ const t=s.trim().split(/\s+/).filter(Boolean);
+ if(!t.length)throw'Enter a tune: a tempo, then pitch and duration pairs.';
+ if(t.some(x=>!/^\d+$/.test(x)))throw'Use whole numbers only, separated by spaces.';
+ const n=t.map(Number);
+ if(n[0]<1)throw'Tempo must be 1 or higher.';
+ if(n.length<3)throw'Add at least one pitch and duration pair after the tempo.';
+ if((n.length-1)%2)throw'Pitch and duration must come in pairs. One number is left over.';
+ const unit=60/n[0],notes=[];
+ for(let i=1;i<n.length;i+=2)notes.push({hz:n[i],u:n[i+1],sec:n[i+1]*unit});
+ return{tempo:n[0],notes,total:notes.reduce((a,b)=>a+b.sec,0)};
+}
+let ctx,timers=[],raf,cur=null,t0=0;
+function draw(p,pos){
+ const c=$('#roll'),g=c.getContext('2d'),W=c.width,H=c.height;
+ g.clearRect(0,0,W,H);
+ g.strokeStyle='#2c3659';g.lineWidth=1;
+ for(let i=1;i<5;i++){g.beginPath();g.moveTo(0,H*i/5);g.lineTo(W,H*i/5);g.stroke()}
+ if(!p)return;
+ const hs=p.notes.filter(n=>audible(n.hz)).map(n=>n.hz);
+ const lo=Math.log(Math.max(20,Math.min(...hs,200)/1.3)),hi=Math.log(Math.max(...hs,400)*1.3);
+ let x=0;
+ p.notes.forEach(n=>{
+  const w=n.sec/p.total*W;
+  if(audible(n.hz)){const y=H-(Math.log(n.hz)-lo)/(hi-lo)*(H-20)-10;
+   g.fillStyle='#ff6a2b';g.fillRect(x+1,y-6,Math.max(w-2,3),12)}
+  x+=w});
+ if(pos!=null){g.fillStyle='#fff';g.fillRect(pos/p.total*W,0,2,H)}
+}
+function table(p){
+ const b=$('#tbl tbody');b.innerHTML='';
+ p.notes.forEach((n,i)=>{const r=b.insertRow();r.innerHTML=`<td>${i+1}</td><td>${n.hz||'0 (rest)'}</td><td>${noteName(n.hz)}</td><td>${n.u}</td><td>${n.sec.toFixed(3)}</td>`});
+ $('#sum').textContent=`Tempo ${p.tempo} means one unit is ${(60/p.tempo).toFixed(3)} s. Total length ${p.total.toFixed(2)} s.`;
+}
+function refresh(){
+ const v=$('#tune').value.trim().replace(/\s+/g,' ');
+ $('#o1').textContent=`GRUB_INIT_TUNE="${v}"`;
+ $('#o2').textContent=`play ${v}`;
+ try{cur=parse(v);$('#err').textContent='';table(cur);draw(cur)}
+ catch(e){cur=null;$('#err').textContent=e;$('#tbl tbody').innerHTML='';$('#sum').textContent='';draw(null)}
+}
+function stop(){timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf);
+ if(ctx){ctx.close();ctx=null}
+ document.querySelectorAll('tr.on').forEach(r=>r.classList.remove('on'));if(cur)draw(cur)}
+function play(){
+ stop();refresh();if(!cur)return;
+ ctx=new(window.AudioContext||window.webkitAudioContext)();
+ const vol=$('#vol').value/100*0.5,start=ctx.currentTime+0.05;
+ const o=ctx.createOscillator(),g=ctx.createGain();
+ o.type='square';o.connect(g);g.connect(ctx.destination);g.gain.value=0;
+ let t=start;
+ cur.notes.forEach((n,i)=>{
+  const a=audible(n.hz);
+  if(a)o.frequency.setValueAtTime(n.hz,t);
+  g.gain.setValueAtTime(a?vol:0,t);
+  if(a&&n.sec>0.03)g.gain.setValueAtTime(0,t+n.sec-0.008);
+  const ms=(t-ctx.currentTime)*1000;
+  timers.push(setTimeout(()=>{const rows=$('#tbl tbody').rows;[...rows].forEach(r=>r.classList.remove('on'));if(rows[i])rows[i].classList.add('on')},ms));
+  t+=n.sec});
+ g.gain.setValueAtTime(0,t);
+ o.start(start);o.stop(t+0.05);
+ const p=cur,c=ctx;
+ (function tick(){if(!ctx||ctx!==c)return;const pos=ctx.currentTime-start;
+  if(pos>=p.total+0.05){stop();return}
+  draw(p,Math.max(0,pos));raf=requestAnimationFrame(tick)})();
+}
+function copy(t){try{navigator.clipboard.writeText(t)}catch(e){}}
+function card(name,code,desc,del){
+ const d=document.createElement('div');d.className='card';
+ d.innerHTML=`<h3></h3><div>${desc?'<span></span>':''}</div><div class="code mono"></div><div class="row"><button class="p">Load and play</button><button class="c">Copy line</button>${del?'<button class="d">Delete</button>':''}</div>`;
+ d.querySelector('h3').textContent=name;if(desc)d.querySelector('span').textContent=desc;
+ d.querySelector('.code').textContent=code;
+ d.querySelector('.p').onclick=()=>{$('#tune').value=code;play();scrollTo({top:0})};
+ d.querySelector('.c').onclick=()=>copy(`GRUB_INIT_TUNE="${code}"`);
+ if(del)d.querySelector('.d').onclick=del;
+ return d;
+}
+const KEY='grubTuneLab.mine';
+function mine(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function saveMine(a){try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}}
+function renderMine(){
+ const a=mine(),box=$('#mine');box.innerHTML='';
+ $('#mine-empty').style.display=a.length?'none':'block';
+ a.forEach((t,i)=>box.append(card(t.name,t.code,'',()=>{a.splice(i,1);saveMine(a);renderMine()})));
+}
+LIB.forEach(t=>$('#lib').append(card(...t)));
+$('#play').onclick=play;$('#stop').onclick=stop;
+$('#tune').oninput=()=>{stop();refresh()};
+$('#c1').onclick=()=>copy($('#o1').textContent);$('#c2').onclick=()=>copy($('#o2').textContent);
+$('#save').onclick=()=>{refresh();if(!cur)return;
+ const name=$('#name').value.trim()||'Untitled tune',a=mine();
+ a.push({name,code:$('#tune').value.trim().replace(/\s+/g,' ')});saveMine(a);$('#name').value='';renderMine()};
+const ref=$('#ref');
+for(let m=60;m<=83;m++){const f=440*Math.pow(2,(m-69)/12);
+ ref.insertAdjacentHTML('beforeend',`<div><code>${NAMES[m%12]}${Math.floor(m/12)-1}</code> ${Math.round(f)} Hz</div>`)}
+renderMine();refresh();
+</script>
+</body>
+</html>
